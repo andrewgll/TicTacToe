@@ -12,12 +12,15 @@ namespace Program
 {
     public partial class Form1 : Form
     {
+        private List<PictureBox> pictureBoxes;
+
         private string[,] board =
         {
            {"","","" },
            {"","","" },
            {"","","" }
         };
+
 
         private string ai;
         private string player;
@@ -33,6 +36,18 @@ namespace Program
         public Form1()
         {
             InitializeComponent();
+            pictureBoxes = new List<PictureBox>
+            {
+                pictureBox1,
+                pictureBox2,
+                pictureBox3,
+                pictureBox4,
+                pictureBox5,
+                pictureBox6,
+                pictureBox7,
+                pictureBox8,
+                pictureBox9
+            };
             loadImages();
         }
 
@@ -40,7 +55,6 @@ namespace Program
         { 
            return a == b && b == c && a != ""; 
         }
-
 
         private string checkWinner()
         {
@@ -97,103 +111,136 @@ namespace Program
 
         }
 
-        private void setPlayer(PictureBox pictureBox, int index1, int index2)
+        private void setPlayer(PictureBox pictureBox)
         {
-            if (currentPlayer == player)
-            {
-                board[index1, index2] = player;
-                pictureBox.Image = playerImage;
-                currentPlayer = ai;
-            }
-            else
-            {
-                board[index1, index2] = ai;
-                pictureBox.Image = aiImage;
-                currentPlayer = player;
-            }
+            
+            int index1 = int.Parse(pictureBox.Tag.ToString()) / 3;
+            int index2 = int.Parse(pictureBox.Tag.ToString()) % 3;
 
+           
+            board[index1, index2] = player;
+            pictureBox.Image = playerImage;
+            currentPlayer = ai;
             pictureBox.Enabled = false;
+            bestMove();
+
+
             string winner = checkWinner();
             if (winner != "")
             {
-                pictureBox1.Enabled = false;
-                pictureBox2.Enabled = false;
-                pictureBox3.Enabled = false;
-                pictureBox4.Enabled = false;
-                pictureBox5.Enabled = false;
-                pictureBox6.Enabled = false;
-                pictureBox7.Enabled = false;
-                pictureBox8.Enabled = false;
-                pictureBox9.Enabled = false;
+
+                pictureBoxEnabled(false);
 
                 MessageBox.Show($"Winner: {winner}");
             }
         }
 
-        private void pictureBox1_Click(object sender, EventArgs e)
+        private void bestMove()
         {
-            setPlayer(pictureBox1, 0,0);
+            int bestScore = -1000;
+            int moveX = 0, moveY = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if(board[i, j] == "")
+                    {
+                        board[i, j] = ai;
+                        int score = minimax(board, 0, false);
+                        board[i, j] = "";
+
+                        if(score > bestScore)
+                        {
+                            bestScore = score;
+                            moveX = i;
+                            moveY = j;
+                        }
+
+                    }
+                }
+            }
+
+            board[moveX, moveY] = ai;
+            pictureBoxes[moveX * 3 + moveY].Image = aiImage;
+            currentPlayer = player;
+
         }
 
-        private void pictureBox2_Click(object sender, EventArgs e)
-        {
 
-            setPlayer(pictureBox2,0,1);
+
+        private int minimax(string[,] board, int depth, bool isMaximizing)
+        {
+            string winner = checkWinner();
+            int result = 0;
+            if (winner != null)
+            {
+                if (winner == ai)
+                    return 10;
+                else if (winner == player)
+                    return -10;
+                else if (winner == "tie")
+                    return 0;
+            }
+
+
+
+            if(isMaximizing)
+            {
+                int bestScore = -1000;
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0;  j < 3;  j++)
+                    {
+                        if(board[i, j] == "")
+                        {
+                            board[i, j] = ai;
+                            int score = minimax(board, depth + 1, false);
+                            board[i, j] = "";
+                            if (score > bestScore)
+                                bestScore = score;
+                        }
+                    }
+                }
+                return bestScore;
+            }
+            else
+            {
+
+                int bestScore = 1000;
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        if (board[i, j] == "")
+                        {
+                            board[i, j] = player;
+                            int score = minimax(board, depth + 1, true);
+                            board[i, j] = "";
+                            if (score < bestScore)
+                                bestScore = score;
+                        }
+                    }
+                }
+                return bestScore;
+            }
+
         }
 
-        private void pictureBox3_Click(object sender, EventArgs e)
+        private void pictureBoxEnabled(bool enable)
+            => pictureBoxes.ForEach((pb) => pb.Enabled = enable);
+
+        private void loadImages()
+            => pictureBoxes.ForEach((pb) => pb.Image = new Bitmap(Image.FromFile(fileDirectory)));
+
+        private void pictureBox_Click(object sender, EventArgs e)
         {
-
-            setPlayer(pictureBox3,0,2);
+            setPlayer(sender as PictureBox);
         }
-
-        private void pictureBox4_Click(object sender, EventArgs e)
-        {
-
-            setPlayer(pictureBox4,1,0);
-        }
-
-        private void pictureBox5_Click(object sender, EventArgs e)
-        {
-
-            setPlayer(pictureBox5,1,1);
-        }
-
-        private void pictureBox6_Click(object sender, EventArgs e)
-        {
-
-            setPlayer(pictureBox6,1,2);
-        }
-
-        private void pictureBox7_Click(object sender, EventArgs e)
-        {
-
-            setPlayer(pictureBox7,2,0);
-        }
-
-        private void pictureBox8_Click(object sender, EventArgs e)
-        {
-
-            setPlayer(pictureBox8,2,1);
-        }
-
-        private void pictureBox9_Click(object sender, EventArgs e)
-        {
-
-            setPlayer(pictureBox9,2,2);
-        }
+     
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             comboBox1.Enabled = false;
-            pictureBox1.Enabled = true;
-            pictureBox2.Enabled = true;
-            pictureBox3.Enabled = true;
-            pictureBox4.Enabled = true;
-            pictureBox5.Enabled = true;
-            pictureBox6.Enabled = true;
-            pictureBox7.Enabled = true;
-            pictureBox8.Enabled = true;
-            pictureBox9.Enabled = true;
+            pictureBoxEnabled(true);
 
             player = comboBox1.SelectedItem.ToString();
 
@@ -217,17 +264,6 @@ namespace Program
             currentPlayer = player;
         }
 
-        private void loadImages()
-        {
-            pictureBox1.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox2.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox3.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox4.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox5.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox6.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox7.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox8.Image = new Bitmap(Image.FromFile(fileDirectory));
-            pictureBox9.Image = new Bitmap(Image.FromFile(fileDirectory));
-        }
+        
     }
 }
